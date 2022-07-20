@@ -463,16 +463,19 @@ class="email">brunwasser@rowan.edu</a>.</p>
 <div id="recommended-reading" class="section level1">
 <h1>Recommended Reading</h1>
 <ul>
+<li>Harrell F. (2020). <a
+href="http://hbiostat.org/doc/rms1.pdf">Regression Modeling
+Strategies</a></li>
 <li>Harrell F. (2022). <a
 href="https://www.fharrell.com/post/re/">Longitudinal Data: Think Serial
 Correlation First, Random Effects Second</a></li>
-<li>Pinheiro &amp; Bates (2000). <a
-href="https://link.springer.com/book/10.1007/b98882">Mixed-Effects
-Models in S and S-PLUS</a></li>
 <li>Pecar &amp; Brabec (2016). <a
 href="https://onlinelibrary.wiley.com/doi/full/10.1111/eth.12514?casa_token=ej3k-YB8xx0AAAAA%3AFiEuaE3nbhMCN_zNGiaRe_g6sCLPEy_vx6MYxmvYHN8fQBWNaNMVnC4TBew4SzwsWdhkTr8IoR0cl3w">Marginal
 models via GLS: a convenient yet neglected tool for the analysis of
 correlated data in the behavioural sciences</a></li>
+<li>Pinheiro &amp; Bates (2000). <a
+href="https://link.springer.com/book/10.1007/b98882">Mixed-Effects
+Models in S and S-PLUS</a></li>
 </ul>
 </div>
 <div id="overview-rationale" class="section level1">
@@ -669,7 +672,9 @@ class="math inline">\(AR_1\)</span> structure described above, with
 <li>The mean trajectory of the outcome variable is simulated to be
 nonlinear, as is common in longitudinal research. This will allow us to
 demonstrate the utility of restricted cubic splines to capture nonlinear
-mean trajectories.</li>
+mean trajectories (see <a
+href="http://hbiostat.org/doc/rms1.pdf">Harrell 2020</a> section
+2.4.5).</li>
 </ul>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>s <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>( <span class="fl">1.0</span>, .<span class="dv">80</span>,  .<span class="dv">64</span>, .<span class="dv">51</span>, .<span class="dv">41</span>, <span class="sc">-</span>.<span class="dv">35</span>, .<span class="dv">40</span>,  </span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>              .<span class="dv">8</span>,   <span class="fl">1.0</span>,  .<span class="dv">80</span>, .<span class="dv">64</span>, .<span class="dv">51</span>, <span class="sc">-</span>.<span class="dv">35</span>, .<span class="dv">40</span>,</span>
@@ -908,7 +913,7 @@ Descriptive Statistics<i>  (N=2500)</i>.  </td></tr>
 <tfoot><tr><td colspan='6'>
 <span style="font-size: 80%;"><i>a</i></span> <i>b</i> <span style="font-size: 80%;"><i>c</i></span> represent the lower quartile <i>a</i>, the median <i>b</i>, and the upper quartile <i>c</i> for continuous variables.</td></tr></tfoot>
 </table>
-<p>To allow us to make plots of our model results, we will use the
+<p><br> To allow us to make plots of our model results, we will use the
 datadist() function from the <em>rms</em> package. This will save
 properties of the study variables that will make plotting results easier
 later. We first create an object (<em>dd</em>) that contains the
@@ -1030,7 +1035,7 @@ in the right margin.</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>( <span class="fu">anova</span>( m1 ) )</span></code></pre></div>
 <p><img src="index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
 <p>One of the most helpful features of the <em>rms</em> package is the
-ability to plot model-based predictions.</p>
+ability to plot model-based predictions using simple code.</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>( <span class="fu">Predict</span>( m1, weeks, <span class="at">x2=</span><span class="fu">c</span>( <span class="fu">quantile</span>( df<span class="sc">$</span>x2)[<span class="dv">2</span>], <span class="fu">quantile</span>(df<span class="sc">$</span>x2)[<span class="dv">3</span>], <span class="fu">quantile</span>(df<span class="sc">$</span>x2)[<span class="dv">4</span>] ), x1cat ) ) <span class="sc">+</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>( <span class="at">title =</span> <span class="st">&#39;Model-Based Predictions&#39;</span>,</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">y =</span> <span class="st">&#39;Predicted Quality of Life Score&#39;</span>,</span>
@@ -1060,7 +1065,12 @@ function in the <em>nlme</em> package.]</p>
 <span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>m2.nlme <span class="ot">&lt;-</span> <span class="fu">update</span>(m1.nlme, <span class="at">weights =</span> <span class="fu">varIdent</span>(<span class="at">form =</span>  <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> time ) )</span></code></pre></div>
 <p>Our first model with constant variances (<em>m1</em>) is
 hierarchically nested within the second model. Therefore, we can compare
-the models with a likelihood ratio test.</p>
+the models with a likelihood ratio test. Below we see that the <span
+class="math inline">\(\chi^2\)</span> test comparing the likelihoods for
+the two models is not significant, and the Akaike Information Criterion
+(AIC) is smaller in the simpler model with constant variance, so we
+prefer the simpler model assuming constant error variances over
+time.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>( m1.nlme, m2.nlme )</span></code></pre></div>
 <pre><code>##         Model df  AIC  BIC logLik   Test L.Ratio p-value
 ## m1.nlme     1  7 5178 5219  -2582                       

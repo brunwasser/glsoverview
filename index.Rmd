@@ -21,9 +21,11 @@ This is a work-in-progress. I will be revising and adding more material soon. Pl
 
 # Recommended Reading 
 
+* Harrell F. (2020). [Regression Modeling Strategies](http://hbiostat.org/doc/rms1.pdf)
 * Harrell F. (2022). [Longitudinal Data: Think Serial Correlation First, Random Effects Second](https://www.fharrell.com/post/re/)
-* Pinheiro & Bates (2000). [Mixed-Effects Models in S and S-PLUS](https://link.springer.com/book/10.1007/b98882)
 * Pecar & Brabec (2016). [Marginal models via GLS: a convenient yet neglected tool for the analysis of correlated data in the behavioural sciences](https://onlinelibrary.wiley.com/doi/full/10.1111/eth.12514?casa_token=ej3k-YB8xx0AAAAA%3AFiEuaE3nbhMCN_zNGiaRe_g6sCLPEy_vx6MYxmvYHN8fQBWNaNMVnC4TBew4SzwsWdhkTr8IoR0cl3w)
+* Pinheiro & Bates (2000). [Mixed-Effects Models in S and S-PLUS](https://link.springer.com/book/10.1007/b98882)
+
 
 # Overview & Rationale
 The purpose of this page is to demonstrate the use of generalized least squares (GLS) regression for modeling longitudinal data. A critical assumption of ordinary least squares (OLS) regression is that errors are independent -- i.e., knowing how much one observation deviates from the population value of interest doesn't tell us anything about the size of deviations among other observations. When individuals provide repeated observations, e.g., in a longitudinal study, this assumption is untenable. Let's say that individuals participants provide outcome data at 5 time points. We would expect the 5 data points provided by the same individual to be correlated -- some individuals will have a general tendency to have negative errors (i.e., they generally score low on the outcome relative to the population) while others will have positive errors (i.e., they generally score high on the outcome relative to the population). OLS regression (and generalized linear models more broadly) won't do in these scenarios because observations from the same individuals are inherently correlated. 
@@ -71,7 +73,7 @@ We simulate a phony data set using the *mvtnorm* package that is suitable to use
 The code below can be skipped if you are not interested in seeing how we created the phony data. A couple of things to note about the simulated data:
 
 * The correlation structure among the repeated assessments is intentionally simulated to match the $AR_1$ structure described above, with $\phi=.80$.
-* The mean trajectory of the outcome variable is simulated to be nonlinear, as is common in longitudinal research. This will allow us to demonstrate the utility of restricted cubic splines to capture nonlinear mean trajectories.
+* The mean trajectory of the outcome variable is simulated to be nonlinear, as is common in longitudinal research. This will allow us to demonstrate the utility of restricted cubic splines to capture nonlinear mean trajectories (see [Harrell 2020](http://hbiostat.org/doc/rms1.pdf) section 2.4.5).
 ```{r}
 s <- matrix(c( 1.0, .80,  .64, .51, .41, -.35, .40,  
               .8,   1.0,  .80, .64, .51, -.35, .40,
@@ -132,8 +134,7 @@ options( digits = 2 )
 html( summaryM( y ~ time, data = dflong1 ) )
 ```
 
-
-
+<br>
 To allow us to make plots of our model results, we will use the datadist() function from the *rms* package. This will save properties of the study variables that will make plotting results easier later. We first create an object (*dd*) that contains the distributions of the data from our final dataset (*dflong1*), and then we use the options() functions to tell R that the distribution data is contained in the *dd* object. Note, you should only do this after you have finalized your dataset. If you make subsequent changes to the dataset without updated the data distribution object, you will get errors.    
 
 ```{r}
@@ -189,7 +190,7 @@ We can also plot the anova() output. The y-axis shows the predictors included in
 plot( anova( m1 ) )
 ```
 
-One of the most helpful features of the *rms* package is the ability to plot model-based predictions. 
+One of the most helpful features of the *rms* package is the ability to plot model-based predictions using simple code. 
 ```{r}
 ggplot( Predict( m1, weeks, x2=c( quantile( df$x2)[2], quantile(df$x2)[3], quantile(df$x2)[4] ), x1cat ) ) +
   labs( title = 'Model-Based Predictions',
@@ -212,7 +213,7 @@ m2 <- update(m1, weights = varIdent(form =  ~ 1 | time ) )
 m2.nlme <- update(m1.nlme, weights = varIdent(form =  ~ 1 | time ) )
 ```
 
-Our first model with constant variances (*m1*) is hierarchically nested within the second model. Therefore, we can compare the models with a likelihood ratio test.
+Our first model with constant variances (*m1*) is hierarchically nested within the second model. Therefore, we can compare the models with a likelihood ratio test. Below we see that the $\chi^2$ test comparing the likelihoods for the two models is not significant, and the Akaike Information Criterion (AIC) is smaller in the simpler model with constant variance, so we prefer the simpler model assuming constant error variances over time.
 
 ```{r}
 anova( m1.nlme, m2.nlme )
