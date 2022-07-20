@@ -1,0 +1,9 @@
+name: "GLS Overview"
+navbar:
+  title: "GLS Overview"
+  left:
+    - text: "Purpose"
+      href: about.html
+    - text: "GLS Demonstration"
+      href: index.html
+output_dir: docs

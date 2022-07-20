@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Steve Brunwasser" />
+
+<meta name="date" content="2022-07-20" />
+
+<title>Generalized Least Squares (GLS) Regression Example</title>
+
+<script src="site_libs/header-attrs-2.14/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">GLS Overview</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="about.html">Purpose</a>
+</li>
+<li>
+  <a href="index.html">GLS Demonstration</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Generalized Least Squares (GLS) Regression
+Example</h1>
+<h4 class="author">Steve Brunwasser</h4>
+<h4 class="date">2022-07-20</h4>
+
+</div>
+
+
+<pre class="r"><code>knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)</code></pre>
+<div id="disclaimer" class="section level1">
+<h1>Disclaimer</h1>
+<p>This is a work-in-progress. I will be revising and adding more
+material soon. Please send corrections and suggestions to <a
+href="mailto:brunwasser@rowan.edu"
+class="email">brunwasser@rowan.edu</a>.</p>
+</div>
+<div id="recommended-reading" class="section level1">
+<h1>Recommended Reading</h1>
+<ul>
+<li>Harrell F. (2022). <a
+href="https://www.fharrell.com/post/re/">Longitudinal Data: Think Serial
+Correlation First, Random Effects Second</a></li>
+<li>Pinheiro &amp; Bates (2000). <a
+href="https://link.springer.com/book/10.1007/b98882">Mixed-Effects
+Models in S and S-PLUS</a></li>
+<li>Pecar &amp; Brabec (2016). <a
+href="https://onlinelibrary.wiley.com/doi/full/10.1111/eth.12514?casa_token=ej3k-YB8xx0AAAAA%3AFiEuaE3nbhMCN_zNGiaRe_g6sCLPEy_vx6MYxmvYHN8fQBWNaNMVnC4TBew4SzwsWdhkTr8IoR0cl3w">Marginal
+models via GLS: a convenient yet neglected tool for the analysis of
+correlated data in the behavioural sciences</a></li>
+</ul>
+</div>
+<div id="overview-rationale" class="section level1">
+<h1>Overview &amp; Rationale</h1>
+<p>The purpose of this page is to demonstrate the use of generalized
+least squares (GLS) regression for modeling longitudinal data. A
+critical assumption of ordinary least squares (OLS) regression is that
+errors are independent – i.e., knowing how much one observation deviates
+from the population value of interest doesn’t tell us anything about the
+size of deviations among other observations. When individuals provide
+repeated observations, e.g., in a longitudinal study, this assumption is
+untenable. Let’s say that individuals participants provide outcome data
+at 5 time points. We would expect the 5 data points provided by the same
+individual to be correlated – some individuals will have a general
+tendency to have negative errors (i.e., they generally score low on the
+outcome relative to the population) while others will have positive
+errors (i.e., they generally score high on the outcome relative to the
+population). OLS regression (and generalized linear models more broadly)
+won’t do in these scenarios because observations from the same
+individuals are inherently correlated.</p>
+<p>Let’s say that you had 500 participants who each provided outcomes
+measurements at 5 time points (assume no missing data for the time
+being): Your dataset would have 2,500 observations. If you run an OLS
+regression, the software will think that you have <span
+class="math inline">\(N=2,500\)</span>, with each data point providing
+unique information. But in reality, each subsequent data point provided
+by an individual contains only partly new/unique information and partly
+redundant information. You can think of each individual participant as
+being a cluster containing 5 correlated data points. The higher the
+within-person (i.e., within-cluster) correlation, the less unique
+information each data point provides. The consequence of ignoring the
+within-person correlations is that you will get standard errors and
+<em>p</em> values that are too small and confidence intervals that are
+too narrow (i.e., inflated Type I errors). The software assumes that
+your sample size is much larger than it really is and therefore
+underestimates the amount of uncertainty in your parameter
+estimates.</p>
+<p>GLS addresses this problem by allowing you to specify patterns of
+within-cluster (in this case, within-person) correlations for the
+outcome variable so that we are no longer assuming that observations
+from the same cluster are independent. There are many different
+correlation patterns that you could specify depending on your
+assumptions about how the within-cluster data points are correlated. We
+will deal only with situations where you have longitudinal data and
+repeated outcome measurements are clustered within individual
+participants. Further, we will implement only one common form of
+<strong>temporal correlation</strong>: the first-order autocorrelation
+structure (<span class="math inline">\(AR_1\)</span>). The <span
+class="math inline">\(AR_1\)</span> structure assumes that outcomes
+measured at adjacent time points are the most strongly correlated and
+that the strength of the correlation deteriorates the greater the
+distance between the two measurements.</p>
+<p>Imagine you took weekly measurements of depressive symptoms over 5
+weeks. You then have 5 depression measurements (<span
+class="math inline">\(y\)</span>) per person (<span
+class="math inline">\(i\)</span>) taken at equally spaced time points
+(<span class="math inline">\(t\)</span>). So depressive symptoms for
+person 1 at the five time points could be written as (<span
+class="math inline">\(y_{it}\)</span>): <span
+class="math inline">\(y_{11}\)</span>, <span
+class="math inline">\(y_{12}\)</span>, … , <span
+class="math inline">\(y_{i5}\)</span>. The <span
+class="math inline">\(AR_1\)</span> model would say that measurements at
+adjacent time points have the strongest correlation: e.g., <span
+class="math inline">\(cor(y_{it}, y_{it+1})\)</span> &gt; <span
+class="math inline">\(cor(y_{it}, y_{it+2})\)</span>. We will also
+assume that the correlation between all adjacent time points is
+constant: <span class="math inline">\(cor(y_{it-1}, y_{it})\)</span> =
+<span class="math inline">\(cor(y_{it}, y_{it+1})\)</span> = … = <span
+class="math inline">\(cor(y_{iT-1}, y_{iT})\)</span>. This might be a
+reasonable assumption when you measure the outcome variable at constant
+intervals. In a GLS model with an <span
+class="math inline">\(AR_1\)</span> error structure, the correlation
+between adjacent time points is a parameter estimated in the model
+(<span class="math inline">\(\phi\)</span> = Greek letter phi): <span
+class="math inline">\(cor(y_{i1}, y_{i2})\)</span> = <span
+class="math inline">\(cor(y_{i2}, y_{i3})\)</span> = <span
+class="math inline">\(\phi\)</span>. Once we know what the correlation
+between two adjacent time points (<span
+class="math inline">\(\phi\)</span>) is, we assume that the correlation
+between more widely spaced assessments can be determined simply by
+raising <span class="math inline">\(\phi\)</span> to a power that is
+equal to the number of time units that separates the two measurements.
+Outcomes spaced two time units apart (i.e., <span
+class="math inline">\(y_{i1}\)</span> and <span
+class="math inline">\(y_{i3}\)</span>; <span
+class="math inline">\(y_{i2}\)</span> and <span
+class="math inline">\(y_{i4}\)</span>; <span
+class="math inline">\(y_{i3}\)</span> and <span
+class="math inline">\(y_{i5}\)</span>) are assumed to be correlated at
+<span class="math inline">\(\phi^2\)</span>. Outcomes spaced three time
+units apart (i.e., <span class="math inline">\(y_{i1}\)</span> and <span
+class="math inline">\(y_{i4}\)</span>; <span
+class="math inline">\(y_{i2}\)</span> and <span
+class="math inline">\(y_{i5}\)</span>) are assumed to be correlated at
+<span class="math inline">\(\phi^3\)</span>, and so on. Thus, the
+correlation between outcomes measured at two time points deteriorates
+exponentially as the space between the two time points increases.</p>
+<p>The <span class="math inline">\(AR_1\)</span> model might be more
+easily understood through the path diagram below. It displays an <span
+class="math inline">\(AR_1\)</span> model where the outcome (<span
+class="math inline">\(y\)</span>) is measured at five equidistant time
+points. There are direct effects (unidirectional arrows) of <span
+class="math inline">\(y\)</span> on itself at the next time point. <span
+class="math inline">\(\phi\)</span> is the correlation between all
+equally spaced, adjacent time points <span
+class="math inline">\(y_{t-1}\)</span> on <span
+class="math inline">\(y_t\)</span> = .80. We could use Wright’s tracing
+rules to calculate the correlation between all measurements by simply
+multiplying the path <span class="math inline">\(\phi\)</span> values
+together along all arrows between the two time points of interest. For
+example, to calculate the correlation between <span
+class="math inline">\(y_1\)</span> and <span
+class="math inline">\(y_3\)</span>, we would multiply <em>path a</em>
+times <em>path b</em> = <span class="math inline">\(\phi^2\)</span> =
+.80 x .80 = .64. Note, this would be equal to the correlation between
+<span class="math inline">\(y_2\)</span> and <span
+class="math inline">\(y_4\)</span> (path <em>b</em> times path
+<em>c</em>) as the distance between <span
+class="math inline">\(y_2\)</span> and <span
+class="math inline">\(y_4\)</span> is the same as the distance between
+<span class="math inline">\(y_1\)</span> and <span
+class="math inline">\(y_3\)</span>. This could also be thought of as a
+mediation model: e.g., the effect of <span
+class="math inline">\(y_1\)</span> on <span
+class="math inline">\(y_5\)</span> is entirely indirect (fully mediated)
+through <span class="math inline">\(y_2\)</span>, <span
+class="math inline">\(y_3\)</span>, and <span
+class="math inline">\(y_4\)</span>. The dotted lines connecting
+measurements represent correlations that result from the <span
+class="math inline">\(AR_1\)</span> process.</p>
+<p><img src="path.png" alt="Path Diagram Illustrating the AR1 Model" />
+<br></p>
+<p>We can represent the <span class="math inline">\(AR_1\)</span>
+correlation structure very succinctly in a correlation matrix (see
+below). You can see how the correlation between measurements diminishes
+exponentially as the distance in time between them increases: <span
+class="math inline">\(cor\)</span>(<span
+class="math inline">\(y_1\)</span>, <span
+class="math inline">\(y_2\)</span>) = <span
+class="math inline">\(\phi\)</span> = .80, whereas <span
+class="math inline">\(cor\)</span>(<span
+class="math inline">\(y_1\)</span>, <span
+class="math inline">\(y_5\)</span>) = <span
+class="math inline">\(\phi^4\)</span> = .41. If we were to use an OLS
+regression model, we would be assuming that all off-diagonal elements of
+the correlation matrix would equal 0 – i.e., the repeated measurements
+are independent/uncorrelated.</p>
+<p><img src="ar1.png" /></p>
+</div>
+<div id="workspace-setup" class="section level1">
+<h1>Workspace setup</h1>
+<p>We will be using several R packages. If you have not used these
+packages before, you need to install them using the code below (remove
+the # characters at the beginning of each row first so that R does not
+ignore those lines). Installation only needs to performed once on your
+computer. Once the package is installed, you can simply read it into
+your workspace in future R sessions.</p>
+<pre class="r"><code># install.packages(&#39;rms&#39;)
+# install.packages(&#39;Hmisc&#39;)
+# install.packages( &#39;nlme&#39; )
+# install.packages( &#39;piecewiseSEM&#39; )
+# install.packages( &#39;mvtnorm&#39; )</code></pre>
+<p>Load the required packages into your workspace.</p>
+<pre class="r"><code>require( rms )
+require( Hmisc )
+require( nlme )
+require( piecewiseSEM )
+require( mvtnorm )</code></pre>
+</div>
+<div id="simulate-a-phony-dataset" class="section level1">
+<h1>Simulate a phony dataset</h1>
+<p>We simulate a phony data set using the <em>mvtnorm</em> package that
+is suitable to use with GLS. The dataset will have a continuous outcome
+variable (<span class="math inline">\(y\)</span>; measuring quality of
+life), a binary and time-invariant predictor variable indicating whether
+or not individuals experienced childhood abuse (<span
+class="math inline">\(x_{1}cat\)</span>), a continuous time-invariant
+predictor measuring optimism (<span class="math inline">\(x_2\)</span>),
+and a continuous time variable indicating how many weeks passed at each
+time point since the start of the study (<span
+class="math inline">\(weeks\)</span>). Let’s say the purpose of the
+study is model the mean trajectory of quality of life over time (5 time
+points) and evaluate the extent to which the predictor variables account
+for variability in quality of life.</p>
+<p>The code below can be skipped if you are not interested in seeing how
+we created the phony data. A couple of things to note about the
+simulated data:</p>
+<ul>
+<li>The correlation structure among the repeated assessments is
+intentionally simulated to match the <span
+class="math inline">\(AR_1\)</span> structure described above, with
+<span class="math inline">\(\phi=.80\)</span>.</li>
+<li>The mean trajectory of the outcome variable is simulated to be
+nonlinear, as is common in longitudinal research. This will allow us to
+demonstrate the utility of restricted cubic splines to capture nonlinear
+mean trajectories.</li>
+</ul>
+<pre class="r"><code>s &lt;- matrix(c( 1.0, .80,  .64, .51, .41, -.35, .40,  
+              .8,   1.0,  .80, .64, .51, -.35, .40,
+              .64,  .80,  1.0, .80, .64, -.35, .40,
+              .51, .64,  .80, 1.0, .80, -.35, .40,
+              .41,  .51,  .64, .80, 1.0, -.35, .40,
+              -.35,-.35, -.35,-.35,-.35,  1.0,-.15,
+              .40,  .40,  .40, .40, .40, -.15, 1.0 ),
+            ncol=7)
+
+m &lt;- c( -1, 0, .5, .75, .5, .5, .5 )
+
+set.seed( 1 )
+df &lt;- data.frame( rmvnorm( n = 500, mean = m, sigma = s ) )
+
+colnames( df ) &lt;- c(&#39;y1&#39;,&#39;y2&#39;,&#39;y3&#39;,&#39;y4&#39;,&#39;y5&#39;,&#39;x1&#39;,&#39;x2&#39;)
+
+
+df$x1cat &lt;- factor( ifelse( df$x1 &gt; .5, 1, 0 ), levels = 0:1, labels = c( &#39;Abuse Absent&#39;,&#39;Abuse Present&#39; ) )
+               
+
+dflong &lt;- reshape( df,
+                   direction = &#39;long&#39;,
+                   varying = list( c(&#39;y1&#39;,&#39;y2&#39;,&#39;y3&#39;,&#39;y4&#39;,&#39;y5&#39;) ),
+                   times = 1:5,
+                   ids = row.names( df )
+                   )
+
+label( dflong$x2 ) &lt;- &#39;Optimism&#39;
+label( dflong$x1cat ) &lt;- &#39;Childhood Abuse&#39;     
+colnames( dflong )[5] &lt;- &#39;y&#39;
+label( dflong$y ) &lt;- &#39;Quality of Life&#39;
+
+
+set.seed( 2 )
+dflong$weeks &lt;- rnorm( 2500, mean = dflong$time, sd = .1 )
+label( dflong$weeks ) &lt;- &#39;Weeks from Baseline&#39;
+
+dflong1 &lt;- dflong[ order( dflong$id, dflong$time ), ]
+dflong1$id &lt;- as.numeric( dflong1$id )
+label( dflong1$id ) &lt;- &#39;Unique Participant Identifier&#39;
+dflong1$x1 &lt;- NULL</code></pre>
+</div>
+<div id="explore-data-set" class="section level1">
+<h1>Explore Data Set</h1>
+<p>The new data set (<em>dflong1</em>) is in the long format. There are
+500 participants who completed 5 assessments. The data frame has 2500
+rows (500 participants x 5 time points each). For convenience, there is
+no missing data. We can use the describe() function from the
+<em>Hmisc</em> package to summarize the data. Nesting the describe()
+function within the html() function will produce nicely formatted output
+with plots of the variable distributions. You can also use the View()
+function in R to view the dataframe. This will help you see that each
+participant has 5 rows corresponding to each assessment.</p>
+<pre class="r"><code>options( digits = 2 )
+html( describe( dflong1 ) )</code></pre>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+<script type="text/javascript">
+<!--
+    function expand_collapse(id) {
+       var e = document.getElementById(id);
+       var f = document.getElementById(id+"_earrows");
+       if(e.style.display == 'none'){
+          e.style.display = 'block';
+          f.innerHTML = '&#9650';
+       }
+       else {
+          e.style.display = 'none';
+          f.innerHTML = '&#9660';
+       }
+    }
+//-->
+</script>
+<style>
+.earrows {color:silver;font-size:11px;}
+
+fcap {
+ font-family: Verdana;
+ font-size: 12px;
+ color: MidnightBlue
+ }
+
+smg {
+ font-family: Verdana;
+ font-size: 10px;
+ color: &#808080;
+}
+
+hr.thinhr { margin-top: 0.15em; margin-bottom: 0.15em; }
+
+span.xscript {
+position: relative;
+}
+span.xscript sub {
+position: absolute;
+left: 0.1em;
+bottom: -1ex;
+}
+</style>
+ <font color="MidnightBlue"><div align=center><span style="font-weight:bold">dflong1 <br><br> 6  Variables   2500  Observations</span></div></font> <hr class="thinhr"> <span style="font-weight:bold">x2</span>: Optimism<div style='float: right; text-align: right;'><img src="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAAJcAAAANCAMAAACTvAxuAAAACVBMVEUAAADMzMz////1iUV5AAAAkUlEQVQ4jc2TjQ7AEAyEz97/oTcUxZhpm7hYMD/9cnJwAgGS0/Orrx0BvKt/6miby1OcxRWhDuECYlmEQWgtGzTBxle1ZoQ5OBcsuRbD5iGo43Io2/KQFozyOPHrTeWpr2SpyK8hEX+kqvaHmj3KXONC/7XjXXcix0xPQi6eMwNRYBcZUZJnRkRKBbqod1l8vhtX6QmfZVH/UwAAAABJRU5ErkJggg==" alt="image" /></div> <pre style="font-size:85%;">
+        n  missing distinct     Info     Mean      Gmd      .05      .10      .25 
+     2500        0      500        1    0.472    1.208  -1.2574  -0.9582  -0.2226 
+      .50      .75      .90      .95 
+   0.4224   1.2063   1.8616   2.1732 
+ </pre>
+ <span style="font-size: 85%;"><font color="MidnightBlue">lowest</font> : -2.2 -2.2 -1.9 -1.9 -1.8 ,  <font color="MidnightBlue">highest</font>:  2.9  3.0  3.0  3.7  4.4</span> <hr class="thinhr"> <span style="font-weight:bold">x1cat</span>: Childhood Abuse <style>
+ .hmisctable252957 {
+ border: none;
+ font-size: 85%;
+ }
+ .hmisctable252957 td {
+ text-align: center;
+ padding: 0 1ex 0 1ex;
+ }
+ .hmisctable252957 th {
+ color: MidnightBlue;
+ text-align: center;
+ padding: 0 1ex 0 1ex;
+ font-weight: normal;
+ }
+ </style>
+ <table class="hmisctable252957">
+ <tr><th>n</th><th>missing</th><th>distinct</th></tr>
+ <tr><td>2500</td><td>0</td><td>2</td></tr>
+ </table>
+ <pre style="font-size:85%;">
+ Value       Abuse Absent Abuse Present
+ Frequency           1270          1230
+ Proportion          0.51          0.49
+ </pre>
+ <hr class="thinhr"> <span style="font-weight:bold">time</span><div style='float: right; text-align: right;'><img src="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAABAAAAANCAMAAACXZR4WAAAACVBMVEUAAADMzMz////1iUV5AAAAHklEQVQImWNgYGRkYAAhKGZgYGICYijFRC2BAbEFAEaVAKLxKMG+AAAAAElFTkSuQmCC" alt="image" /></div> <style>
+ .hmisctable519055 {
+ border: none;
+ font-size: 85%;
+ }
+ .hmisctable519055 td {
+ text-align: center;
+ padding: 0 1ex 0 1ex;
+ }
+ .hmisctable519055 th {
+ color: MidnightBlue;
+ text-align: center;
+ padding: 0 1ex 0 1ex;
+ font-weight: normal;
+ }
+ </style>
+ <table class="hmisctable519055">
+ <tr><th>n</th><th>missing</th><th>distinct</th><th>Info</th><th>Mean</th><th>Gmd</th></tr>
+ <tr><td>2500</td><td>0</td><td>5</td><td>0.96</td><td>3</td><td>1.601</td></tr>
+ </table>
+ <span style="font-size: 85%;"><font color="MidnightBlue">lowest</font> : 1 2 3 4 5 ,  <font color="MidnightBlue">highest</font>: 1 2 3 4 5</span> <pre style="font-size:85%;">
+ Value        1   2   3   4   5
+ Frequency  500 500 500 500 500
+ Proportion 0.2 0.2 0.2 0.2 0.2
+ </pre>
+ <hr class="thinhr"> <span style="font-weight:bold">y</span>: Quality of Life<div style='float: right; text-align: right;'><img src="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAAJcAAAANCAMAAACTvAxuAAAACVBMVEUAAADMzMz////1iUV5AAAAhklEQVQ4jcXV3Q6AIAgF4EPv/9BOhZqtKR5wnYtyLejrhwU5EyBYf50Jgo2TXJUBix0INUwgKQZj/nQNjLfrxjHGgAvOcC5u2LZzdB7bjRMo7D+xjQLtz7m01P2xuV0058OX5cozuWHzk0LvbSpbAeugQPq2LVB/bbYAmNlbR2z3XFA6wTQFd6UJMEpxNEYAAAAASUVORK5CYII=" alt="image" /></div> <pre style="font-size:85%;">
+        n  missing distinct     Info     Mean      Gmd      .05      .10      .25 
+     2500        0     2500        1   0.1788    1.393  -1.8257  -1.4646  -0.6674 
+      .50      .75      .90      .95 
+   0.2185   1.0429   1.7324   2.1730 
+ </pre>
+ <span style="font-size: 85%;"><font color="MidnightBlue">lowest</font> : -3.9 -3.8 -3.6 -3.4 -3.3 ,  <font color="MidnightBlue">highest</font>:  3.3  3.4  3.7  4.0  4.1</span> <hr class="thinhr"> <span style="font-weight:bold">id</span>: Unique Participant Identifier<div style='float: right; text-align: right;'><img src="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAAJcAAAANCAMAAACTvAxuAAAACVBMVEUAAADMzMz////1iUV5AAAARElEQVQ4je3TsQ0AMAgDQWD/oeNAFaWBChf+CU6WbI6MKk9SoG3JWyRJrm5yTbskvj/mI41vrdpLrn5yzao/biv+8McDtBgAniHmfgkAAAAASUVORK5CYII=" alt="image" /></div> <style>
+ .hmisctable171588 {
+ border: none;
+ font-size: 74%;
+ }
+ .hmisctable171588 td {
+ text-align: center;
+ padding: 0 1ex 0 1ex;
+ }
+ .hmisctable171588 th {
+ color: MidnightBlue;
+ text-align: center;
+ padding: 0 1ex 0 1ex;
+ font-weight: normal;
+ }
+ </style>
+ <table class="hmisctable171588">
+ <tr><th>n</th><th>missing</th><th>distinct</th><th>Info</th><th>Mean</th><th>Gmd</th><th>.05</th><th>.10</th><th>.25</th><th>.50</th><th>.75</th><th>.90</th><th>.95</th></tr>
+ <tr><td>2500</td><td>0</td><td>500</td><td>1</td><td>250.5</td><td>166.7</td><td> 25.95</td><td> 50.90</td><td>125.75</td><td>250.50</td><td>375.25</td><td>450.10</td><td>475.05</td></tr>
+ </table>
+ <span style="font-size: 85%;"><font color="MidnightBlue">lowest</font> :   1   2   3   4   5 ,  <font color="MidnightBlue">highest</font>: 496 497 498 499 500</span> <hr class="thinhr"> <span style="font-weight:bold">weeks</span>: Weeks from Baseline<div style='float: right; text-align: right;'><img src="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAAJcAAAANCAMAAACTvAxuAAAACVBMVEUAAADMzMz////1iUV5AAAAkElEQVQ4jb3VSw6AIAwE0Kn3P7RGlJR+gFK0K5PHkNGkETQ7QIYvD+Vx1AF71oMUjw8IBoNuNMfh9/qpV5hFLz/bVbyT6dUcQCtedpIXexlp1HUo42/TDCfjxj5++73iLHs52RRjgSFp2827e1nZee5ng73Qz4ZY+YCd28G3qYz6VUmm6jCc8X1CMbG8YnryJ76RCdLV0uA0AAAAAElFTkSuQmCC" alt="image" /></div> <style>
+ .hmisctable877859 {
+ border: none;
+ font-size: 74%;
+ }
+ .hmisctable877859 td {
+ text-align: center;
+ padding: 0 1ex 0 1ex;
+ }
+ .hmisctable877859 th {
+ color: MidnightBlue;
+ text-align: center;
+ padding: 0 1ex 0 1ex;
+ font-weight: normal;
+ }
+ </style>
+ <table class="hmisctable877859">
+ <tr><th>n</th><th>missing</th><th>distinct</th><th>Info</th><th>Mean</th><th>Gmd</th><th>.05</th><th>.10</th><th>.25</th><th>.50</th><th>.75</th><th>.90</th><th>.95</th></tr>
+ <tr><td>2500</td><td>0</td><td>2500</td><td>1</td><td>3.005</td><td>1.623</td><td>0.9347</td><td>1.0046</td><td>1.9403</td><td>3.0020</td><td>4.0668</td><td>5.0085</td><td>5.0799</td></tr>
+ </table>
+ <span style="font-size: 85%;"><font color="MidnightBlue">lowest</font> : 0.73 0.73 0.75 0.75 0.76 ,  <font color="MidnightBlue">highest</font>: 5.28 5.28 5.29 5.32 5.33</span> <hr class="thinhr">
+<p><br></p>
+<p>We can use the summaryM() function from <em>Hmisc</em> to look at
+descriptive statistics (1st quartile, median, and 3rd quartile) for
+<span class="math inline">\(y_{it}\)</span> at each time point.</p>
+<pre class="r"><code>options( digits = 2 )
+html( summaryM( y ~ time, data = dflong1 ) )</code></pre>
+<table class='gmisc_table' style='border-collapse: collapse; margin-top: 1em; margin-bottom: 1em;' >
+<thead>
+<tr><td colspan='6' style='text-align: left;'>
+Descriptive Statistics<i>  (N=2500)</i>.  </td></tr>
+<tr><th style='border-bottom: 1px solid grey; font-weight: 900; border-top: 2px solid grey; width:13ex; text-align: center;'></th>
+<th style='font-weight: 900; border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;'>1<br><i>N=500</i></th>
+<th style='font-weight: 900; border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;'>2<br><i>N=500</i></th>
+<th style='font-weight: 900; border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;'>3<br><i>N=500</i></th>
+<th style='font-weight: 900; border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;'>4<br><i>N=500</i></th>
+<th style='font-weight: 900; border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;'>5<br><i>N=500</i></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style='width:13ex; border-bottom: 2px solid grey; text-align: left;'>Quality of Life</td>
+<td style='padding: 0 7px 0 7px; border-bottom: 2px solid grey; text-align: center;'>-1.712 -1.041 -0.386</td>
+<td style='padding: 0 7px 0 7px; border-bottom: 2px solid grey; text-align: center;'>-0.745 -0.033  0.708</td>
+<td style='padding: 0 7px 0 7px; border-bottom: 2px solid grey; text-align: center;'>-0.176  0.508  1.336</td>
+<td style='padding: 0 7px 0 7px; border-bottom: 2px solid grey; text-align: center;'> 0.037  0.797  1.508</td>
+<td style='padding: 0 7px 0 7px; border-bottom: 2px solid grey; text-align: center;'>-0.102  0.589  1.271</td>
+</tr>
+</tbody>
+<tfoot><tr><td colspan='6'>
+<span style="font-size: 80%;"><i>a</i></span> <i>b</i> <span style="font-size: 80%;"><i>c</i></span> represent the lower quartile <i>a</i>, the median <i>b</i>, and the upper quartile <i>c</i> for continuous variables.</td></tr></tfoot>
+</table>
+<p>To allow us to make plots of our model results, we will use the
+datadist() function from the <em>rms</em> package. This will save
+properties of the study variables that will make plotting results easier
+later. We first create an object (<em>dd</em>) that contains the
+distributions of the data from our final dataset (<em>dflong1</em>), and
+then we use the options() functions to tell R that the distribution data
+is contained in the <em>dd</em> object. Note, you should only do this
+after you have finalized your dataset. If you make subsequent changes to
+the dataset without updated the data distribution object, you will get
+errors.</p>
+<pre class="r"><code>dd &lt;- datadist( dflong1 )
+options( datadist = &#39;dd&#39; )</code></pre>
+</div>
+<div id="run-a-gls-model" class="section level1">
+<h1>Run a GLS Model</h1>
+<p>Here we run a GLS model using the simulated dataset. We regress our
+continuous outcome variable (<strong>y</strong>: Quality of life)
+on:</p>
+<ul>
+<li>the variable coding weeks from baseline to capture a mean time trend
+(<strong>weeks</strong>)</li>
+<li>the binary predictor indicating whether the person wsa a victim of
+childhood abuse (<strong>x1cat</strong>)</li>
+<li>the continuous variable representing levels of optimism at baseline
+(<strong>x2</strong>)</li>
+</ul>
+<p>It’s often not reasonable to assume that the outcome variable changes
+linearly over time. Therefore, we use the rcs() function to estimate the
+time trend using a restricted cubic spline with 3 knots. This will allow
+the time trend to be highly flexible and nonlinear. Restricted cubic
+splines require the estimation of <span
+class="math inline">\(k-1\)</span> degrees of freedom (<span
+class="math inline">\(df\)</span>), where <span
+class="math inline">\(k\)</span> is the number of knots. As we are
+asking for only 3 knots, the time effect will require <span
+class="math inline">\(df=2\)</span>. Restricted cubic splines offer a
+nice middle ground between making the restrictive assumption of
+linearity and overfitting the model.</p>
+<p>Note, the specification of the GLS model looks a lot like an OLS
+regression model in R. The major difference is the argument:
+<em>“correlation = corAR1( form =~ time | id)”</em>. This argument tells
+the software that we want an <span class="math inline">\(AR_1\)</span>
+correlation structure with repeated time points (<em>time</em> variable)
+clustered within individuals (<em>id</em> variable).</p>
+<pre class="r"><code>m1 &lt;- Gls( y ~ rcs(weeks, 3) + x1cat + x2,
+           correlation = corAR1( form =~ time | id),
+           na.action = &#39;na.omit&#39;,
+           method = &#39;REML&#39;,
+           data = dflong1 
+           )</code></pre>
+<p>When we run the model and use the print() function, we see that all
+of the predictor variables are strongly significant. Notice, that
+because we used a restricted cubic spline to estimate the effect of week
+of follow-up (<em>weeks</em>), there are two coefficients for this
+effect; the first is positive and the second is negative. Also, note
+that the output gives us an estimate of <span
+class="math inline">\(\phi\)</span> = .74, which is pretty close to the
+population value in our simulation (.80).</p>
+<pre class="r"><code>print( m1 )</code></pre>
+<pre><code>## Generalized Least Squares Fit by REML
+##  
+##  Gls(model = y ~ rcs(weeks, 3) + x1cat + x2, data = dflong1, correlation = corAR1(form = ~time | 
+##      id), method = &quot;REML&quot;, na.action = &quot;na.omit&quot;)
+##  
+##                                                      
+##      Obs2500    Log-restricted-likelihood-2581.99    
+##  Clusters500                        Model d.f.  4    
+##      g 0.877                        sigma  0.9323    
+##                                     d.f.     2495    
+##  
+##                      Coef    S.E.   t      Pr(&gt;|t|)
+##  Intercept           -1.9557 0.0677 -28.88 &lt;0.0001 
+##  weeks                1.0016 0.0247  40.60 &lt;0.0001 
+##  weeks&#39;              -0.8096 0.0286 -28.32 &lt;0.0001 
+##  x1cat=Abuse Present -0.4319 0.0664  -6.51 &lt;0.0001 
+##  x2                   0.3338 0.0312  10.71 &lt;0.0001 
+##  
+##  Correlation Structure: AR(1)
+##   Formula: ~time | id 
+##   Parameter estimate(s):
+##   Phi 
+##  0.74 
+## </code></pre>
+<p>It can be helpful to get point estimates and confidence intervals
+together. We can do this by binding together the output from the coef()
+and confint() functions, as shown below.</p>
+<pre class="r"><code>m1.coef &lt;- cbind( coef(m1), confint(m1) ) 
+colnames( m1.coef) &lt;- c( &#39;Est&#39;,&#39;LCI&#39;,&#39;UCI&#39; )
+m1.coef</code></pre>
+<pre><code>##                       Est   LCI   UCI
+## Intercept           -1.96 -2.09 -1.82
+## weeks                1.00  0.95  1.05
+## weeks&#39;              -0.81 -0.87 -0.75
+## x1cat=Abuse Present -0.43 -0.56 -0.30
+## x2                   0.33  0.27  0.39</code></pre>
+<p>We can use the anova() function to get Wald <span
+class="math inline">\(\chi^2\)</span> tests for each predictor. This
+gives us an overall test of the effect of <em>weeks</em> (<span
+class="math inline">\(df=2\)</span>) and a test of whether there is
+evidence of nonlinearity in the effect of <em>weeks</em> – which is
+significant and supportive of our choice to model a nonlinear time
+effect with the restricted cubic spline.</p>
+<pre class="r"><code>anova( m1 )</code></pre>
+<pre><code>##                 Wald Statistics          Response: y 
+## 
+##  Factor     Chi-Square d.f. P     
+##  weeks      1846       2    &lt;.0001
+##   Nonlinear  802       1    &lt;.0001
+##  x1cat        42       1    &lt;.0001
+##  x2          115       1    &lt;.0001
+##  TOTAL      2016       4    &lt;.0001</code></pre>
+<p>We can also plot the anova() output. The y-axis shows the predictors
+included in the model, and the x-axis shows the <span
+class="math inline">\(\chi^2\)</span> subtracting the number of
+<em>df</em>s associated with the test. This can give us a sense of which
+variables are most important in our model, with variable importance
+increasing as you go down the y-axis. The <span
+class="math inline">\(\chi^2\)</span> and <em>p</em> values are provided
+in the right margin.</p>
+<pre class="r"><code>plot( anova( m1 ) )</code></pre>
+<p><img src="gls.training_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>One of the most helpful features of the <em>rms</em> package is the
+ability to plot model-based predictions.</p>
+<pre class="r"><code>ggplot( Predict( m1, weeks, x2=c( quantile( df$x2)[2], quantile(df$x2)[3], quantile(df$x2)[4] ), x1cat ) ) +
+  labs( title = &#39;Model-Based Predictions&#39;,
+        y = &#39;Predicted Quality of Life Score&#39;,
+        ) +
+  scale_color_discrete( labels = c(&#39;1st Quartile&#39;,&#39;2nd Quartile&#39;,&#39;3rd Quartile&#39;), name = &#39;Optimism Level&#39; ) +
+  theme( plot.title = element_text( color = &#39;darkblue&#39;, face = &#39;bold&#39;, hjust = .5, size = 16) )</code></pre>
+<p><img src="gls.training_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p>To this point, we’ve assumed that the error variance is constant
+across the 5 time points (homoscedasticity). These phony data were
+simulated to have constant error variances. But often this assumption
+will not be tenable. For example, an intervention or exposure might
+influence not only mean levels of an outcome, but also the variance. We
+can allow for heteroscedastic error variances over time by updating our
+model (using the update() function) and adding the varIdent argument, as
+demonstrated below. [For some reason, I get an error when comparing the
+nested models fit with the Gls() function in the <em>rms</em> package –
+almost certainly user error. So, I refit the models using the gls()
+function in the <em>nlme</em> package.]</p>
+<pre class="r"><code>m1.nlme &lt;- gls( y ~ rcs(weeks, 3) + x1cat + x2,
+           correlation = corAR1( form =~ time | id),
+           na.action = &#39;na.omit&#39;,
+           method = &#39;REML&#39;,
+           data = dflong1 
+           )
+
+m2 &lt;- update(m1, weights = varIdent(form =  ~ 1 | time ) )
+m2.nlme &lt;- update(m1.nlme, weights = varIdent(form =  ~ 1 | time ) )</code></pre>
+<p>Our first model with constant variances (<em>m1</em>) is
+hierarchically nested within the second model. Therefore, we can compare
+the models with a likelihood ratio test.</p>
+<pre class="r"><code>anova( m1.nlme, m2.nlme )</code></pre>
+<pre><code>##         Model df  AIC  BIC logLik   Test L.Ratio p-value
+## m1.nlme     1  7 5178 5219  -2582                       
+## m2.nlme     2 11 5182 5246  -2580 1 vs 2     3.8    0.43</code></pre>
+<p><br></p>
+<p>We would also want to evaluate tenability of the normality of errors
+assumption by seeing whether the model residuals are approximately
+normal. I used the <em>qqplotr</em> package in R to make a qq plot –
+could also do this easily using base R or functions built in to
+<em>ggplot2</em>.</p>
+<pre class="r"><code>m1.resid &lt;- data.frame( residual = resid( m1.nlme ) )
+
+require( qqplotr )
+qq &lt;- ggplot( m1.resid, mapping = aes(sample = residual)) +
+    stat_qq_band() +
+    stat_qq_line() +
+    stat_qq_point() +
+    labs(x = &quot;Theoretical Quantiles&quot;, y = &quot;Sample Quantiles&quot;)
+qq</code></pre>
+<p><img src="gls.training_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+</div>
+<div id="compare-the-gls-ols-models" class="section level1">
+<h1>Compare the GLS &amp; OLS Models</h1>
+<p>If we rerun our model using OLS – ignoring the correlation of
+observations within individuals – we can see that the confidence
+intervals for the two primary predictors are 1.7 times larger in the GLS
+model than in the OLS model.</p>
+<pre class="r"><code>m1.ols &lt;- ols( y ~ rcs(weeks, 3) + x1cat + x2,
+           data = dflong1 
+           )
+
+m1.ols.coef &lt;- cbind( coef( m1.ols), confint( m1.ols ) ) 
+colnames( m1.ols.coef ) &lt;- c(&#39;Est&#39;,&#39;LCI&#39;,&#39;UCI&#39; )
+
+coef.gls.ols &lt;- data.frame( rbind( m1.coef, m1.ols.coef ) )
+
+coef.gls.ols$model &lt;- factor( rep( 1:2, each = 5 ), levels = 1:2, labels = c(&#39;GLS&#39;,&#39;OLS&#39;)  )
+coef.gls.ols$var &lt;- rep( c(&#39;Intercept&#39;,&#39;Week-1&#39;,&#39;Week-2&#39;,&#39;Abuse&#39;,&#39;Optimism&#39;), 2 )
+coef.gls.ols$ystart &lt;-  rep( 1:5, 2)
+coef.gls.ols$yend &lt;-  rep( 1:5, 2)
+
+coef.gls.ols1 &lt;- subset( coef.gls.ols, var == &#39;Optimism&#39; | var == &#39;Abuse&#39; )
+
+ggplot( coef.gls.ols1, aes( x = Est, y = var, color = model ) ) +
+  geom_point( position =  position_dodge( width = .5), size = 2 ) +
+  geom_errorbarh( aes( xmin = LCI, xmax = UCI ), position =  position_dodge( width = .5), height = 0 )</code></pre>
+<p><img src="gls.training_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre class="r"><code>coef.gls.ols1$width &lt;- coef.gls.ols1$UCI - coef.gls.ols1$LCI</code></pre>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
